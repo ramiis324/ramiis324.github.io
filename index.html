@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clock made of clocks</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #root {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .clock-container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            padding: 20px;
+        }
+        
+        .mini-clock {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            position: relative;
+            background: #1a1a1a;
+        }
+        
+        .hand {
+            position: absolute;
+            background: #fff;
+            transform-origin: bottom center;
+            left: 50%;
+            bottom: 50%;
+            border-radius: 2px;
+        }
+        
+        .hour-hand {
+            width: 3px;
+            height: 18px;
+            margin-left: -1.5px;
+            background: #ff6b6b;
+        }
+        
+        .minute-hand {
+            width: 2px;
+            height: 24px;
+            margin-left: -1px;
+            background: #4ecdc4;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const MiniClock = ({ hourAngle, minuteAngle }) => {
+            return (
+                <div className="mini-clock">
+                    <div 
+                        className="hand hour-hand" 
+                        style={{ transform: `translateX(-50%) rotate(${hourAngle}deg)` }}
+                    />
+                    <div 
+                        className="hand minute-hand" 
+                        style={{ transform: `translateX(-50%) rotate(${minuteAngle}deg)` }}
+                    />
+                </div>
+            );
+        };
+        
+        const ClockDisplay = () => {
+            const [time, setTime] = useState(new Date());
+            
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setTime(new Date());
+                }, 1000);
+                
+                return () => clearInterval(interval);
+            }, []);
+            
+            const hours = time.getHours() % 12;
+            const minutes = time.getMinutes();
+            const seconds = time.getSeconds();
+            
+            const hourStr = hours.toString().padStart(2, '0');
+            const minuteStr = minutes.toString().padStart(2, '0');
+            const secondStr = seconds.toString().padStart(2, '0');
+            
+            const timeStr = `${hourStr}${minuteStr}${secondStr}`;
+            
+            const digitPatterns = {
+                '0': [1,1,1,1,0,1,1,0,1,1,0,1,1,1,1],
+                '1': [0,0,1,0,0,1,0,0,1,0,0,1,0,0,1],
+                '2': [1,1,1,0,0,1,1,1,1,1,0,0,1,1,1],
+                '3': [1,1,1,0,0,1,1,1,1,0,0,1,1,1,1],
+                '4': [1,0,1,1,0,1,1,1,1,0,0,1,0,0,1],
+                '5': [1,1,1,1,0,0,1,1,1,0,0,1,1,1,1],
+                '6': [1,1,1,1,0,0,1,1,1,1,0,1,1,1,1],
+                '7': [1,1,1,0,0,1,0,0,1,0,0,1,0,0,1],
+                '8': [1,1,1,1,0,1,1,1,1,1,0,1,1,1,1],
+                '9': [1,1,1,1,0,1,1,1,1,0,0,1,1,1,1]
+            };
+            
+            const getClockAngles = (segment) => {
+                if (segment === 0) {
+                    return { hour: 90, minute: 270 };
+                } else {
+                    return { hour: 0, minute: 180 };
+                }
+            };
+            
+            const renderClocks = () => {
+                const clocks = [];
+                for (let digit of timeStr) {
+                    const pattern = digitPatterns[digit];
+                    for (let segment of pattern) {
+                        const angles = getClockAngles(segment);
+                        clocks.push(
+                            <MiniClock 
+                                key={clocks.length}
+                                hourAngle={angles.hour}
+                                minuteAngle={angles.minute}
+                            />
+                        );
+                    }
+                }
+                return clocks;
+            };
+            
+            return (
+                <div className="clock-container">
+                    {renderClocks()}
+                </div>
+            );
+        };
+        
+        ReactDOM.render(<ClockDisplay />, document.getElementById('root'));
+    </script>
+</body>
+</html>
